@@ -10,6 +10,14 @@ git clone https://github.com/rbpisupati/nf-snpmatch.git
 
 You need to have SNPmatch installed in your system. Please visit (https://github.com/Gregor-Mendel-Institute/SNPmatch.git) for detailed instructions on installing SNPmatch.
 
+## Running the pipeline
+
+```bash
+nextflow run main.nf --func "inbred" --input "*.vcf" --outdir "snpmatch" --db "hdf5" --db_acc "hdf5_acc"
+```
+
+For now, there are two functions that you can use "inbred" and "cross"
+
 ## Configuration
 
 The pipeline is written mainly to run SNPmatch on GMI HPC mendel which is PBS system. Please change config file accordingly to run it on your system.

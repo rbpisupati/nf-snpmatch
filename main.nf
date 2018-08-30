@@ -31,13 +31,13 @@ db_acc_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  publishDir "$input_folder", mode: 'copy'
+  storeDir "$input_folder"
 
   input:
   set file(input_file) from input_files
 
   output:
-  set file(input_file), file("${input_file}.snpmatch.npz") into input_gzips
+  set val(prefix), file("${input_file}.snpmatch.npz") into input_gzips
   file "${input_file}.snpmatch.stats.json" into input_stats
 
   script:
@@ -54,17 +54,17 @@ if (params.func == 'inbred'){
   process identify_libraries {
     tag { "${prefix}" }
     publishDir "$params.outdir"
+    errorStrategy 'ignore'
 
     input:
-    set file(input_file), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
+    set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
     output:
     file "${prefix}.snpmatch*" into snpmatch_output
 
     script:
-    prefix = input_file.getBaseName()
     """
-    snpmatch inbred -d $f_db -e $f_db_acc -i $input_file -o ${prefix}.snpmatch
+    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch
     """
   }
 }
@@ -73,17 +73,18 @@ if (params.func == 'cross'){
   process cross_libraries {
     tag { "${prefix}" }
     publishDir "$params.outdir"
+    errorStrategy 'ignore'
+    // cross generally puts out many errors based on the number of SNPs in a window and chromosome
 
     input:
-    set file(input_file), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
+    set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
     output:
     file "${prefix}.snpmatch*" into snpmatch_output
 
     script:
-    prefix = input_file.getBaseName()
     """
-    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_file -o ${prefix}.snpmatch
+    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch
     """
   }
 }
