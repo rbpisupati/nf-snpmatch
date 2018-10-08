@@ -80,7 +80,7 @@ if (params.func == 'inbred'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/01_makeCSVTable_inbred.R -o intermediate_modified.csv -f $workflow.workDir
+    Rscript $workflow.projectDir/scripts/01_makeCSVTable_inbred.R -o intermediate_modified.csv -f $workflow.launchDir
     """
   }
 
@@ -117,7 +117,7 @@ if (params.func == 'cross'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/02_makeCSVTable_csmatch.R -o intermediate_modified.csv -f $workflow.workDir
+    Rscript $workflow.projectDir/scripts/02_makeCSVTable_csmatch.R -o intermediate_modified.csv -f $workflow.launchDir
     """
   }
 }
