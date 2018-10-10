@@ -70,7 +70,7 @@ if (params.func == 'inbred'){
 
   input_csv = snpmatch_output.collect()
 
-  process make_csv {
+  process make_csv_inbred {
     publishDir "$params.outdir", mode: 'copy'
 
     input:
@@ -107,7 +107,7 @@ if (params.func == 'cross'){
 
   input_csv = snpmatch_output.collect()
 
-  process make_csv {
+  process make_csv_cross {
     publishDir "$params.outdir", mode: 'copy'
 
     input:
