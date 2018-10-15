@@ -18,6 +18,7 @@ params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135
 //input files
 input_files = Channel
     .fromPath ( params.input )
+    .map { [ "$it.baseName", "${it.getParent()}", file("$it") ] }
     .ifEmpty { exit 1, "Cannot find any input files matching: ${params.input}\nNB: Path needs to be enclosed in quotes!\n" }
 
 db_file = Channel
@@ -31,18 +32,16 @@ db_acc_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  storeDir "$input_folder"
+  storeDir "${input_folder}"
 
   input:
-  file(input_file) from input_files
+  set val(prefix), val(input_folder), file(input_file) from input_files
 
   output:
   set val(prefix), file("${input_file}.snpmatch.npz") into input_gzips
   file "${input_file}.snpmatch.stats.json" into input_stats
 
   script:
-  input_folder = input_file.toRealPath().getParent()
-  prefix = input_file.getBaseName()
   """
   snpmatch parser -v -i $input_file
   """
