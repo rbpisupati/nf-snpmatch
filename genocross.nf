@@ -60,7 +60,7 @@ process genotype_cross {
   set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
   output:
-  file "${prefix}.snpmatch*" into snpmatch_output
+  file "${prefix}.genotyper.txt" into snpmatch_output
 
   script:
   """
