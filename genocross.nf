@@ -2,7 +2,7 @@
 /*
 Simply run nextflow pipeline as:
 
-nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
+nextflow run genocross.nf --input "*vcf" --parents "5856x9452" --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
 */
 /*
  * SET UP CONFIGURATION VARIABLES
@@ -10,7 +10,7 @@ nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_
 params.input = false
 params.parents=false
 params.windows=300000
-params.outdir = 'snpmatch_1135g'
+params.outdir = 'genotype_cross'
 
 params.project = "the1001genomes"
 // databases
@@ -65,5 +65,21 @@ process genotype_cross {
   script:
   """
   snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
+  """
+}
+
+input_csv = snpmatch_output.collect()
+
+process genotyper_csv {
+  publishDir "$params.outdir/genos", mode: 'copy'
+
+  input:
+  file "*" from input_csv
+
+  output:
+  file "genotyper*txt" into output_table
+
+  """
+  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -b $params.windows -o genotyper -i ./
   """
 }
