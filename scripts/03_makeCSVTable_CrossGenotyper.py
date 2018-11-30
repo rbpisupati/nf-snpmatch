@@ -12,7 +12,7 @@ import numpy as np
 import argparse
 import logging
 from snpmatch.core import csmatch
-from bshap.core import genome
+from bshap.core import genome, the1001g
 tair10 = genome.ArabidopsisGenome()
 from glob import glob
 import os.path
@@ -54,7 +54,7 @@ for efile_ix in range(len(input_files)):
     e_out = open( args.out_prefix + "." + e_id + ".txt", 'w' )
     for ewind_ix in range(len(iter_winds_str)):
         t_gen = epd.iloc[:,3][np.where( epd.iloc[:,0] == ewind_ix + 1 )[0]]
-        if t_gen.shape[0] > 0 and pd.notna(t_gen).any():
+        if t_gen.shape[0] > 0 and t_gen.dropna().shape[0] > 0:
             t_gen = str(int(float(t_gen) * 2))
             e_out.write("%s\t%s\n" % ( iter_winds_str[ewind_ix], t_gen ))
             all_genotypes[efile_ix, ewind_ix] = t_gen
@@ -64,6 +64,7 @@ for efile_ix in range(len(input_files)):
     all_genotypes_ids = np.append(all_genotypes_ids, e_id)
     e_out.close()
 
+the1001g.generate_h5_1001g(args['file_paths'], args['output_file'])
 #all_genotypes = pd.DataFrame(all_genotypes, )
 #all_genotypes.insert(0, column = "pheno", value = np.zeros( all_genotypes.shape[0] ) )
 #all_genotypes = pd.concat([pd.DataFrame(np.zeros( all_genotypes.columns.values.shape[0], dtype="string"), index= all_genotypes.columns.values).T, all_genotypes], ignore_index=True)
