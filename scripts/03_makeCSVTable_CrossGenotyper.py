@@ -23,48 +23,46 @@ log = logging.getLogger(__name__)
 inOptions = argparse.ArgumentParser(description='get a genotype matrix')
 inOptions.add_argument("-i", dest="files_path", default = ".", help="path for input files")
 inOptions.add_argument("-b", dest="binLen", default = 300000, type=int, help="length for windows")
-inOptions.add_argument("-o", dest="out_prefix", default = "genotyper", help="output file prefix")
+inOptions.add_argument("-o", dest="output_file", default = "genotyper.csv", type=str, help="output file prefix")
 
 args = inOptions.parse_args()
 
 log.info("reading input files")
 input_files = glob(args.files_path + "/" + "*.genotyper.txt")
-input_ids = [ os.path.basename(efile).split("_")[0] for efile in input_files]
-input_ids = np.array(input_ids)
-redundant_inputs = np.max(np.unique(input_ids, return_counts=True)[1])
+input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split("_", expand=True)
 
+if len(np.unique(input_ids.iloc[:,0])) != len(input_files):
+    input_ids = np.array(input_ids.iloc[:,0] + input_ids.iloc[:,1], dtype="string")
+else:
+    input_ids = np.array(input_ids.iloc[:,0], dtype="string")
 log.info("done! %s files" % len( input_files ))
 
-log.info("iterating over genome")
-iter_winds = tair10.iter_windows(args.binLen)
-iter_winds_str = []
-for ei in iter_winds:
-    iter_winds_str.append( "%s\t%s\t%s" % (ei[0], ei[1], ei[2]) )
-log.info("done")
 
-all_genotypes = np.zeros((len(input_files), len(iter_winds_str)), dtype="string" )
-all_genotypes_ids = np.zeros(0, dtype="string")
-for efile_ix in range(len(input_files)):
-    epd = pd.read_table(input_files[efile_ix], header = None)
-    e_id = os.path.basename(input_files[efile_ix]).split("_")
-    if redundant_inputs > 1:
-        e_id = e_id[0] + e_id[1]
-    else:
-        e_id = e_id[0]
-    e_out = open( args.out_prefix + "." + e_id + ".txt", 'w' )
-    for ewind_ix in range(len(iter_winds_str)):
-        t_gen = epd.iloc[:,3][np.where( epd.iloc[:,0] == ewind_ix + 1 )[0]]
-        if t_gen.shape[0] > 0 and t_gen.dropna().shape[0] > 0:
-            t_gen = str(int(float(t_gen) * 2))
-            e_out.write("%s\t%s\n" % ( iter_winds_str[ewind_ix], t_gen ))
-            all_genotypes[efile_ix, ewind_ix] = t_gen
-        else:
-            e_out.write("%s\tnan\n" % ( iter_winds_str[ewind_ix] ))
-            all_genotypes[efile_ix, ewind_ix] = '-'
-    all_genotypes_ids = np.append(all_genotypes_ids, e_id)
-    e_out.close()
+base_epd = pd.read_table(input_files[0], header = None)
 
-the1001g.generate_h5_1001g(args['file_paths'], args['output_file'])
-#all_genotypes = pd.DataFrame(all_genotypes, )
-#all_genotypes.insert(0, column = "pheno", value = np.zeros( all_genotypes.shape[0] ) )
-#all_genotypes = pd.concat([pd.DataFrame(np.zeros( all_genotypes.columns.values.shape[0], dtype="string"), index= all_genotypes.columns.values).T, all_genotypes], ignore_index=True)
+all_genotypes = np.zeros((base_epd.shape[0], len(input_files)), dtype="float" )
+all_genotypes[:,0] = base_epd.iloc[:,5]
+for efile_ix in range(len(input_files) - 1 ):
+    epd = pd.read_table(input_files[efile_ix + 1], header = None)
+    if base_epd.shape[0] != epd.shape[0]:
+        log.error("Lines are not same in all the files, please check")
+    all_genotypes[:,efile_ix + 1] = epd.iloc[:,5]
+
+
+est_cm = base_epd.iloc[:,0].astype(str) + "," + base_epd.iloc[:,1].astype(str) + "," + base_epd.iloc[:,2].astype(str)
+est_cm = est_cm.apply(tair10.estimated_cM_distance)
+est_cm = est_cm - est_cm[0]
+
+log.info("writing csvr file")
+out_csvr = open( args.output_file, 'w')
+out_csvr.write( "%s,%s\n" % ('id,,', str(pd.Series(input_ids).str.cat(sep=","))))
+out_csvr.write( "%s,%s\n" % ('pheno,', ',0' * len(input_ids)))
+
+for em_ix in range(base_epd.shape[0]):
+    echr_ix = tair10.get_chr_ind(base_epd.iloc[em_ix,0])
+    em_str = str( echr_ix + 1 ) + ":" + str( base_epd.iloc[em_ix,1] ) + "-" + str(base_epd.iloc[em_ix,2]) + "," + str(echr_ix + 1) + "," + str(est_cm[em_ix])
+    em_geno_str = pd.Series([ '%.0f' % ef  for ef in all_genotypes[0,:]]).astype(str).str.cat(sep=",")
+    out_csvr.write( "%s,%s\n" % ( em_str, em_geno_str ) )
+
+out_csvr.close()
+log.info("done!")

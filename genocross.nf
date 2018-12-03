@@ -14,8 +14,8 @@ params.outdir = 'genotype_cross'
 
 params.project = "the1001genomes"
 // databases
-params.db = "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
-params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5"
+params.db = "/lustre/scratch/projects/the1001genomes/rahul/107.VCF_1001G_imputed/the1001genomes_all_chromosomes_binary.hdf5"
+params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/107.VCF_1001G_imputed/the1001genomes_all_chromosomes_binary.acc.hdf5"
 
 //input files
 input_files = Channel
@@ -64,22 +64,38 @@ process genotype_cross {
 
   script:
   """
-  snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
+  snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt --hmm
   """
 }
 
-input_csv = snpmatch_output.collect()
+snpmatch_output
+    .collect()
+    .into{ input_csv; input_hdf5 }
 
 process genotyper_csv {
-  publishDir "$params.outdir/genos", mode: 'copy'
+  publishDir "$params.outdir", mode: 'copy'
 
   input:
   file "*" from input_csv
 
   output:
-  file "genotyper*txt" into output_table
+  file "genotyper.csv" into output_table
 
   """
-  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -b $params.windows -o genotyper -i ./
+  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -b $params.windows -o genotyper.csv -i ./
+  """
+}
+
+process genotyper_hdf5 {
+  publishDir "$params.outdir", mode: 'copy'
+
+  input:
+  file "*" from input_hdf5
+
+  output:
+  file "genotyper.hdf5" into output_h5py
+
+  """
+  bshap generate_h5_1001g -i ./*genotyper.txt -d 6 -o genotyper.hdf5 -v
   """
 }
