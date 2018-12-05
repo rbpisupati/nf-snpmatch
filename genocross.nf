@@ -9,7 +9,7 @@ nextflow run genocross.nf --input "*vcf" --parents "5856x9452" --db hdf5_file --
 */
 params.input = false
 params.parents=false
-params.windows=300000
+params.windows=200000
 params.outdir = 'genotype_cross'
 
 params.project = "the1001genomes"
@@ -82,7 +82,7 @@ process genotyper_csv {
   file "genotyper.csv" into output_table
 
   """
-  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -b $params.windows -o genotyper.csv -i ./
+  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper.csv -i ./
   """
 }
 

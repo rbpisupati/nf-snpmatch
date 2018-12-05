@@ -22,7 +22,6 @@ log = logging.getLogger(__name__)
 
 inOptions = argparse.ArgumentParser(description='get a genotype matrix')
 inOptions.add_argument("-i", dest="files_path", default = ".", help="path for input files")
-inOptions.add_argument("-b", dest="binLen", default = 300000, type=int, help="length for windows")
 inOptions.add_argument("-o", dest="output_file", default = "genotyper.csv", type=str, help="output file prefix")
 
 args = inOptions.parse_args()
@@ -61,7 +60,7 @@ out_csvr.write( "%s,%s\n" % ('pheno,', ',0' * len(input_ids)))
 for em_ix in range(base_epd.shape[0]):
     echr_ix = tair10.get_chr_ind(base_epd.iloc[em_ix,0])
     em_str = str( echr_ix + 1 ) + ":" + str( base_epd.iloc[em_ix,1] ) + "-" + str(base_epd.iloc[em_ix,2]) + "," + str(echr_ix + 1) + "," + str(est_cm[em_ix])
-    em_geno_str = pd.Series([ '%.0f' % ef  for ef in all_genotypes[0,:]]).astype(str).str.cat(sep=",")
+    em_geno_str = pd.Series([ '%.0f' % ef  for ef in all_genotypes[em_ix,:]]).astype(str).str.cat(sep=",")
     out_csvr.write( "%s,%s\n" % ( em_str, em_geno_str ) )
 
 out_csvr.close()
