@@ -64,7 +64,7 @@ process genotype_cross {
 
   script:
   """
-  snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt --hmm
+  snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
   """
 }
 
@@ -73,16 +73,29 @@ snpmatch_output
     .into{ input_csv; input_hdf5 }
 
 process genotyper_csv {
-  publishDir "$params.outdir", mode: 'copy'
 
   input:
   file "*" from input_csv
 
   output:
-  file "genotyper.csv" into output_table
+  file "genotyper_temp.csv" into output_table
 
   """
-  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper.csv -i ./
+  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper_temp.csv -i ./
+  """
+}
+
+process fill_geno {
+  publishDir "$params.outdir", mode: 'copy'
+
+  input:
+  file incsv from output_table
+
+  output:
+  file "genotyper.csv" into filled_csv
+
+  """
+  Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper.csv
   """
 }
 
@@ -90,12 +103,12 @@ process genotyper_hdf5 {
   publishDir "$params.outdir", mode: 'copy'
 
   input:
-  file "*" from input_hdf5
+  file fcsv from filled_csv
 
   output:
   file "genotyper.hdf5" into output_h5py
 
   """
-  bshap generate_h5_1001g -i ./*genotyper.txt -d 6 -o genotyper.hdf5 -v
+  bshap generate_h5_1001g -m -i $fcsv -o genotyper.hdf5 -v
   """
 }
