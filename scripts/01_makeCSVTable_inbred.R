@@ -40,6 +40,7 @@ AFfreq <- numeric()
 LikeLihoodTopHit <- numeric()
 LLRNextHit <- numeric()
 TopHitsNumber <- numeric()
+PerHeterozygosity <- numeric()
 TopHits <- character()
 ChoiceAcc <- numeric()
 Overlap <- numeric()
@@ -51,10 +52,11 @@ for (file in allScoreFiles){
     next
   }
   name <- sub(".snpmatch", "", name)
-  snps <- as.integer(jsonstat$overlap[2] / jsonstat$overlap[1])
+  snps <- as.integer(jsonstat$overlap[2])
   overlap <- jsonstat$overlap[1]
   casenu <- jsonstat$interpretation$case
   interpreter <- jsonstat$interpretation$text
+  perhet = jsonstat$percent_heterozygosity
 
   #Converting the name of file into rows and columns
   nums <- sub(folid, "", name)
@@ -71,13 +73,12 @@ for (file in allScoreFiles){
   topscore <- ScoreAcc$V4[ranks[1]]
   topacc <- as.character(ScoreAcc$V1[ranks[1]])
   snps <- ScoreAcc$V7[ranks[1]]
-  depth <- ScoreAcc$V9[ranks[1]]
+  depth <- ScoreAcc$V8[ranks[1]]
   maxlike <- ScoreAcc$V5[ranks[1]]
 
   newLike <- ScoreAcc$V5[ranks]/ScoreAcc$V5[ranks[1]]
   nextlike <- newLike[2]
 
-#  snps <- as.numeric(numSNPs$V1[which(numSNPs$V2 == name)])
   nextacc <- as.character(ScoreAcc$V1[ranks[2]])
   nextscore <- ScoreAcc$V4[ranks[2]]
   frac <- nextscore/topscore
@@ -122,6 +123,7 @@ for (file in allScoreFiles){
   TopHitAcc <- c(TopHitAcc, topacc)
   NextHitAcc <- c(NextHitAcc, nextacc)
   ThirdHit <- c(ThirdHit, thirdHit)
+  PerHeterozygosity = c(PerHeterozygosity, perhet)
   TopHitScore <- c(TopHitScore, topscore)
   TopHitAccSNPs <- c(TopHitAccSNPs, topaccsnps)
   TopHitMatchedSNPs <- c(TopHitMatchedSNPs, topmatchsnps)
@@ -134,6 +136,8 @@ for (file in allScoreFiles){
 
 fol = rep(folid, length(Names))
 
-DF <- cbind(FOL = fol, FILENAME = Names, TopHitAccession = TopHitAcc, NextHit = NextHitAcc, ThirdHit = ThirdHit, Score = as.numeric(TopHitScore), FracScore = as.numeric(FracScore), MatchedSNPs = as.numeric(TopHitMatchedSNPs), NextHitMatchedSNPs = as.numeric(NextHitMatchedSNPs), SNPsinfoAcc  = as.numeric(TopHitAccSNPs), SNPsCalled = as.numeric(SNPscalled), MeanDepth = MeanDepth, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, Overlap = Overlap, TopHitsNumber = TopHitsNumber, TopHits = TopHits)
+DF <- cbind(FOL = fol, FILENAME = Names, TopHitAccession = TopHitAcc, NextHit = NextHitAcc, ThirdHit = ThirdHit, Score = as.numeric(TopHitScore), FracScore = as.numeric(FracScore), MatchedSNPs = as.numeric(TopHitMatchedSNPs), NextHitMatchedSNPs = as.numeric(NextHitMatchedSNPs), SNPsinfoAcc  = as.numeric(TopHitAccSNPs), SNPsCalled = as.numeric(SNPscalled), MeanDepth = MeanDepth, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, percent_heterozygosity = PerHeterozygosity, Overlap = Overlap, TopHitsNumber = TopHitsNumber, TopHits = TopHits)
+
+summary(warnings())
 
 write.csv(DF, file = outFile)

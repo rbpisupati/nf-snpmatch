@@ -79,7 +79,7 @@ if (params.func == 'inbred'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/01_makeCSVTable_inbred.R -o intermediate_modified.csv -f $workflow.launchDir
+    Rscript $workflow.projectDir/scripts/01_makeCSVTable_inbred.R -o intermediate_modified.csv -f $params.outdir
     """
   }
 
