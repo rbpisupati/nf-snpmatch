@@ -10,6 +10,7 @@ nextflow run genocross.nf --input "*vcf" --parents "5856x9452" --db hdf5_file --
 params.input = false
 params.parents=false
 params.windows=200000
+params.hmm = false
 params.outdir = 'genotype_cross'
 
 params.project = "the1001genomes"
@@ -51,64 +52,120 @@ process parse_inputfiles {
 
 input_files_dbs = input_gzips.combine(db_file).combine(db_acc_file)
 
-process genotype_cross {
-  tag { "${prefix}" }
-  publishDir "$params.outdir", mode: 'copy'
-  errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
+if (params.hmm) {
 
-  input:
-  set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
+  process genotype_cross {
+    tag { "${prefix}" }
+    publishDir "$params.outdir", mode: 'copy'
+    errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
 
-  output:
-  file "${prefix}.genotyper.txt" into snpmatch_output
+    input:
+    set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
-  script:
-  """
-  snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
-  """
+    output:
+    file "${prefix}.genotyper.txt" into snpmatch_output
+
+    script:
+    """
+    snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt --hmm
+    """
+  }
+
+
+} else {
+
+  process genotype_cross {
+    tag { "${prefix}" }
+    publishDir "$params.outdir", mode: 'copy'
+    errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
+
+    input:
+    set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
+
+    output:
+    file "${prefix}.genotyper.txt" into snpmatch_output
+
+    script:
+    """
+    snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
+    """
+  }
 }
 
 snpmatch_output
     .collect()
     .into{ input_csv; input_hdf5 }
 
-process genotyper_csv {
+if (params.hmm) {
 
-  input:
-  file "*" from input_csv
+  process genotyper_csv {
+    publishDir "$params.outdir", mode: 'copy'
 
-  output:
-  file "genotyper_temp.csv" into output_table
+    input:
+    file "*" from input_csv
 
-  """
-  python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper_temp.csv -i ./
-  """
-}
+    output:
+    file "genotyper.csv" into output_table
 
-process fill_geno {
-  publishDir "$params.outdir", mode: 'copy'
+    """
+    python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper.csv -i ./
+    """
+  }
 
-  input:
-  file incsv from output_table
+  process genotyper_hdf5 {
+    publishDir "$params.outdir", mode: 'copy'
 
-  output:
-  file "genotyper.csv" into filled_csv
+    input:
+    file "*" from input_hdf5
 
-  """
-  Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper.csv
-  """
-}
+    output:
+    file "genotyper.hdf5" into output_h5py
 
-process genotyper_hdf5 {
-  publishDir "$params.outdir", mode: 'copy'
+    """
+    bshap generate_h5_1001g -i *txt -o genotyper.hdf5 -v
+    """
+  }
 
-  input:
-  file fcsv from filled_csv
+} else {
 
-  output:
-  file "genotyper.hdf5" into output_h5py
+  process genotyper_csv {
 
-  """
-  bshap generate_h5_1001g -m -i $fcsv -o genotyper.hdf5 -v
-  """
+    input:
+    file "*" from input_csv
+
+    output:
+    file "genotyper_temp.csv" into output_table
+
+    """
+    python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper_temp.csv -i ./
+    """
+  }
+
+  process fill_geno {
+    publishDir "$params.outdir", mode: 'copy'
+
+    input:
+    file incsv from output_table
+
+    output:
+    file "genotyper.csv" into filled_csv
+
+    """
+    Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper.csv
+    """
+  }
+
+  process genotyper_hdf5 {
+    publishDir "$params.outdir", mode: 'copy'
+
+    input:
+    file fcsv from filled_csv
+
+    output:
+    file "genotyper.hdf5" into output_h5py
+
+    """
+    bshap generate_h5_1001g -m -i $fcsv -o genotyper.hdf5 -v
+    """
+  }
 }
