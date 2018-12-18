@@ -31,6 +31,9 @@ TopHit <- character()
 TopScore <- numeric()
 NextHit <- character()
 FracScore <- numeric()
+LikeLihoodTopHit <- numeric()
+LLRNextHit <- numeric()
+TopHitsNumber <- numeric()
 ScoreP1 <- numeric()
 ScoreP2 <- numeric()
 NumWindows <- numeric()
@@ -91,7 +94,12 @@ for (echscore in wind.filelist){
   nextscore <- ScoreAcc$V4[ranks[2]]
   frac <- nextscore/topscore
   snps <- ScoreAcc$V7[ranks[1]]
+  topnum <- length(which(ScoreAcc$V6 < 3.841))
+  maxlike <- ScoreAcc$V5[ranks[1]]
+  nextlike <- ScoreAcc$V6[ranks[2]]
 
+  LikeLihoodTopHit <- c(LikeLihoodTopHit, maxlike)
+  LLRNextHit <- c(LLRNextHit, nextlike)
   SNPscalled <- c(SNPscalled, snps)
   TopHit <- c(TopHit, topacc)
   NextHit <- c(NextHit, nextacc)
@@ -103,6 +111,6 @@ for (echscore in wind.filelist){
   GivParents <- c(GivParents, expParents)
 }
 
-DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
+DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
 
 write.csv(DF, file = outFile)
