@@ -6,7 +6,7 @@ options(warn=-1)
 
 option_list = list(
   make_option(c("-i", "--inFile"), type="character", default=NULL, help="input csv file of genotypes per windows", metavar="character"),
-  make_option(c("-t", "--error_thres"), type="numeric", default=NULL, help="error rate for windows", metavar="numeric"),
+  make_option(c("-t", "--error_thres"), type="numeric", default=0.05, help="error rate for windows", metavar="numeric"),
   make_option(c("-o", "--outFile"), type="character", help="output file for filled genotypes", metavar="character")
 );
 

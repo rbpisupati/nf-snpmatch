@@ -151,7 +151,7 @@ if (params.hmm) {
     file "genotyper.csv" into filled_csv
 
     """
-    Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper.csv
+    Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper
     """
   }
 
