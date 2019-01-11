@@ -15,8 +15,8 @@ params.outdir = 'genotype_cross'
 
 params.project = "the1001genomes"
 // databases
-params.db = "/lustre/scratch/projects/the1001genomes/rahul/107.VCF_1001G_imputed/the1001genomes_all_chromosomes_binary.hdf5"
-params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/107.VCF_1001G_imputed/the1001genomes_all_chromosomes_binary.acc.hdf5"
+params.db = "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
+params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5"
 
 //input files
 input_files = Channel
