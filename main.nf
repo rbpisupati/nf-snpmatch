@@ -33,6 +33,7 @@ db_acc_file = Channel
 process parse_inputfiles {
   tag { "${prefix}" }
   storeDir "${input_folder}"
+  label 'env_snpmatch'
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -54,6 +55,7 @@ if (params.func == 'inbred'){
     tag { "${prefix}" }
     publishDir "$params.outdir", mode: 'copy'
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
+    label 'env_snpmatch'
 
     input:
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
@@ -71,6 +73,7 @@ if (params.func == 'inbred'){
 
   process make_csv_inbred {
     publishDir "$params.outdir", mode: 'copy'
+    label 'env_rcsv'
 
     input:
     file "*" from input_csv
@@ -91,6 +94,7 @@ if (params.func == 'cross'){
     publishDir "$params.outdir", mode: 'copy'
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
     // cross generally puts out many errors based on the number of SNPs in a window and chromosome
+    label 'env_snpmatch'
 
     input:
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
@@ -107,6 +111,7 @@ if (params.func == 'cross'){
   input_csv = snpmatch_output.collect()
 
   process make_csv_cross {
+    label 'env_rcsv'
     publishDir "$params.outdir", mode: 'copy'
 
     input:
