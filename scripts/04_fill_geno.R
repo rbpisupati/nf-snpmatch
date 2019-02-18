@@ -18,7 +18,10 @@ output.geno.file <- opt$outFile
 
 geno_t = read.cross("csvr", dirname(input.geno.file), basename(input.geno.file), genotypes=c(0,1,2), na.strings = c('NA', "nan"))
 
-geno_fill = fill.geno(geno_t, error.prob = opt$error_thres, method = "argmax")
+#geno_fill = fill.geno(geno_t, error.prob = opt$error_thres, method = "argmax")
+
+geno_est = replace.map(geno_t, est.map(geno_t, verbose=TRUE, maxit = 100))
+geno_fill = fill.geno(geno_est, error.prob = opt$error_thres, method = "argmax")
 
 print(geno_fill)
 
