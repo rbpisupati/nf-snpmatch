@@ -6,6 +6,8 @@
 
 
 library("optparse")
+library("jsonlite")
+
 option_list = list(
   make_option(c("-o", "--outFile"), type="character", default="intermediate_modified.csv", help="Output file name [default= %default]", metavar="character"),
   make_option(c("-f", "--folID"), type="character", default=NULL, help="Plate ID to be added in the CSV file", metavar="character"),
@@ -40,17 +42,21 @@ NumWindows <- numeric()
 CountP1 <- numeric()
 CountP2 <- numeric()
 SNPscalled <- numeric()
+PerHeterozygosity <- numeric()
+Overlap <- numeric()
 AmbiWindows <- character()
 AmbiWindowCount <- character()
 TopHitsNumber <- numeric()
 for (echscore in wind.filelist){
-  name <- sub("[.]windowscore[.]txt", "", echscore)
+  filename <- sub("[.]windowscore[.]txt", "", echscore)
+  name <- sub("[.]csmatch", "", sub("[.]filter", "", sub("[.]snpmatch", "", filename)))
   likeLiwind <- try(read.table(echscore, header = F, as.is = TRUE))
-  ScoreAcc <- try(read.table(paste(name, ".scores.txt", sep =""), header = FALSE, as.is = TRUE))
-  if(inherits(likeLiwind, 'try-error') | inherits(ScoreAcc, 'try-error')){
+  ScoreAcc <- try(read.table(paste(filename, ".scores.txt", sep =""), header = FALSE, as.is = TRUE))
+  jsonstat <- try(fromJSON(paste(filename, ".matches.json", sep = "")))
+  jsonstat_per <- try(fromJSON(paste(name, ".snpmatch.matches.json", sep = "")))
+  if(inherits(likeLiwind, 'try-error') | inherits(ScoreAcc, 'try-error') | inherits(jsonstat, 'try-error') | inherits(jsonstat_per, 'try-error')){
     next
   }
-  filename <- unlist(strsplit(name, "[.]"))[1]
 #  givparents <- sub("F2_p1_#", "", filename)
 #  expP1 <- unlist(strsplit(givparents, "x"))[1]
 #  expP2 <- unlist(strsplit(givparents, "x"))[2]
@@ -60,21 +66,12 @@ for (echscore in wind.filelist){
   clean <- as.data.frame(clean)
   topHits <- rownames(tail(clean, 2))
 
-  if (!is.na(topHits[2])){
-    ScoreP2 <- c(ScoreP2, mean(likeLiwind$V4[homowind[which(likeLiwind$V1[homowind] == topHits[1])]], na.rm = TRUE))
-    ScoreP1 <- c(ScoreP1, mean(likeLiwind$V4[homowind[which(likeLiwind$V1[homowind] == topHits[2])]], na.rm = TRUE))
-    FouParents1 <- c(FouParents1, as.character(topHits[2]))
-    FouParents2 <- c(FouParents2, as.character(topHits[1]))
-    CountP2 <- c(CountP2, as.numeric(tail(clean, 2)[1,]))
-    CountP1 <- c(CountP1, as.numeric(tail(clean, 2)[2,]))
-  } else {
-    ScoreP1 <- c(ScoreP1, mean(likeLiwind$V4[homowind[which(likeLiwind$V1[homowind] == topHits[1])]], na.rm = TRUE))
-    ScoreP2 <- c(ScoreP2, NA)
-    FouParents1 <- c(FouParents1, as.character(topHits[1]))
-    FouParents2 <- c(FouParents2, NA)
-    CountP1 <- c(CountP1, as.numeric(tail(clean, 2)[1,]))
-    CountP2 <- c(CountP2, NA)
-  }
+  PerHeterozygosity = c(PerHeterozygosity, jsonstat_per$percent_heterozygosity)
+  Overlap = c(Overlap, jsonstat$overlap[1])
+  FouParents1 <- c(FouParents1, as.character( jsonstat$parents$mother[1] ))
+  FouParents2 <- c(FouParents2, as.character( jsonstat$parents$father[1] ))
+  CountP1 <- c(CountP1, as.numeric( jsonstat$parents$mother[2] ))
+  CountP2 <- c(CountP2, as.numeric( jsonstat$parents$father[2] ))
 
   ambWind <- which(likeLiwind$V7 < 20)
   nclean <- sort(-table(likeLiwind$V1[ambWind]))
@@ -111,6 +108,8 @@ for (echscore in wind.filelist){
   GivParents <- c(GivParents, expParents)
 }
 
-DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
+DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, Overlap = Overlap, Heterozygosity = PerHeterozygosity, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
+
+warnings()
 
 write.csv(DF, file = outFile)

@@ -11,9 +11,7 @@ import pandas as pd
 import numpy as np
 import argparse
 import logging
-from snpmatch.core import csmatch
-from bshap.core import genome, the1001g
-tair10 = genome.ArabidopsisGenome()
+from snpmatch.core import genomes
 from glob import glob
 import os.path
 
@@ -22,11 +20,13 @@ log = logging.getLogger(__name__)
 
 inOptions = argparse.ArgumentParser(description='get a genotype matrix')
 inOptions.add_argument("-i", dest="files_path", default = ".", help="path for input files")
+inOptions.add_argument("--genome", dest="genome_file", default = "athaliana_tair10", help="path for input files")
 inOptions.add_argument("-o", dest="output_file", default = "genotyper.csv", type=str, help="output file prefix")
 
 args = inOptions.parse_args()
 
 log.info("reading input files")
+tair10 = genomes.Genome(args.genome_file)
 input_files = glob(args.files_path + "/" + "*.genotyper.txt")
 input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split("_", expand=True)
 
@@ -58,7 +58,7 @@ out_csvr.write( "%s,%s\n" % ('id,,', str(pd.Series(input_ids).str.cat(sep=",")))
 out_csvr.write( "%s,%s\n" % ('pheno,', ',0' * len(input_ids)))
 
 for em_ix in range(base_epd.shape[0]):
-    echr_ix = tair10.get_chr_ind(base_epd.iloc[em_ix,0])
+    echr_ix = tair10.get_chr_ind(str(base_epd.iloc[em_ix,0]))
     em_str = str( echr_ix + 1 ) + ":" + str( base_epd.iloc[em_ix,1] ) + "-" + str(base_epd.iloc[em_ix,2]) + "," + str(echr_ix + 1) + "," + str(est_cm[em_ix])
     em_geno_str = pd.Series([ '%.0f' % ef  for ef in all_genotypes[em_ix,:]]).astype(str).str.cat(sep=",")
     out_csvr.write( "%s,%s\n" % ( em_str, em_geno_str ) )
