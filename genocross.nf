@@ -36,7 +36,6 @@ db_acc_file = Channel
 process parse_inputfiles {
   tag { "${prefix}" }
   storeDir "${input_folder}"
-  label 'env_snpmatch'
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -59,7 +58,6 @@ if (params.hmm) {
     tag { "${prefix}" }
     publishDir "$params.outdir", mode: 'copy'
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
-    label 'env_snpmatch'
 
     input:
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
@@ -80,7 +78,6 @@ if (params.hmm) {
     tag { "${prefix}" }
     publishDir "$params.outdir", mode: 'copy'
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
-    label 'env_snpmatch'
 
     input:
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
@@ -103,7 +100,6 @@ if (params.hmm) {
 
   process genotyper_csv {
     publishDir "$params.outdir", mode: 'copy'
-    label 'env_bshap'
 
     input:
     file "*" from input_csv
@@ -116,25 +112,9 @@ if (params.hmm) {
     """
   }
 
-  process genotyper_hdf5 {
-    publishDir "$params.outdir", mode: 'copy'
-    label 'env_bshap'
-
-    input:
-    file "*" from input_hdf5
-
-    output:
-    file "genotyper.hdf5" into output_h5py
-
-    """
-    bshap generate_h5_1001g -i *txt -o genotyper.hdf5 -v
-    """
-  }
-
 } else {
 
   process genotyper_csv {
-    label 'env_bshap'
 
     input:
     file "*" from input_csv
@@ -162,18 +142,4 @@ if (params.hmm) {
     """
   }
 
-  process genotyper_hdf5 {
-    publishDir "$params.outdir", mode: 'copy'
-    label 'env_bshap'
-
-    input:
-    file fcsv from filled_csv
-
-    output:
-    file "genotyper.hdf5" into output_h5py
-
-    """
-    bshap generate_h5_1001g -m -i $fcsv -o genotyper.hdf5 -v
-    """
-  }
 }
