@@ -12,6 +12,7 @@ params.parents=false
 params.windows=200000
 params.hmm = false
 params.outdir = 'genotype_cross'
+params.genome = "athaliana_tair10"
 
 params.project = "the1001genomes"
 // databases
@@ -87,7 +88,7 @@ if (params.hmm) {
 
     script:
     """
-    snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt
+    snpmatch genotype_cross -v -e $f_db_acc -i $input_npz -p "$params.parents" -b "$params.windows" -o ${prefix}.genotyper.txt --genome $params.genome
     """
   }
 }

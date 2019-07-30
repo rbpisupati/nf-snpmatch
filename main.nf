@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 /*
 Simply run nextflow pipeline as:
+// Better to use imputed dataset for snpmatch cross
 
 nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
 */
@@ -11,9 +12,11 @@ params.input = false
 params.project = "the1001genomes"
 params.outdir = 'snpmatch_1135g'
 params.func = 'inbred'
+params.genome = "athaliana_tair10"
 // databases
-params.db = "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
-params.db_acc= "/lustre/scratch/projects/the1001genomes/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5"
+params.db = "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
+params.db_acc= "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5"
+
 
 //input files
 input_files = Channel
@@ -32,7 +35,7 @@ db_acc_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  storeDir "${input_folder}"
+  publishDir "${input_folder}", mode: 'copy', overwrite: false
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -97,11 +100,11 @@ if (params.func == 'cross'){
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
     output:
-    file "${prefix}.snpmatch*" into snpmatch_output
+    file "${prefix}.csmatch*" into snpmatch_output
 
     script:
     """
-    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch
+    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.csmatch --genome $params.genome
     """
   }
 
@@ -118,7 +121,7 @@ if (params.func == 'cross'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/02_makeCSVTable_csmatch.R -o intermediate_modified.csv -f $workflow.launchDir
+    Rscript $workflow.projectDir/scripts/02_makeCSVTable_csmatch.R -o intermediate_modified.csv -f $params.outdir
     """
   }
 }
