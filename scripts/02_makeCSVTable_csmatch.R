@@ -3,15 +3,17 @@
 # 1. Output file
 # 2. Folder ID that needs to be added
 # 3. expParents
-
-
 library("optparse")
 library("jsonlite")
+
+identity_test <- function(matches, n, error_rate){binom.test(n - as.integer(matches * n), n, error_rate, alternative="less")$p.value}
+pval_thres = 0.05
 
 option_list = list(
   make_option(c("-o", "--outFile"), type="character", default="intermediate_modified.csv", help="Output file name [default= %default]", metavar="character"),
   make_option(c("-f", "--folID"), type="character", default=NULL, help="Plate ID to be added in the CSV file", metavar="character"),
-  make_option(c("-e", "--expParents"), type="character", default=".x.", help="expected parents, ex: 6090x9416", metavar="character")
+  make_option(c("-e", "--expParents"), type="character", default=".x.", help="expected parents, ex: 6090x9416", metavar="character"),
+  make_option(c("-t", "--error_rate"), type="numeric", default="0.03", help="error rate to call identical windows")
 );
 opt = parse_args(OptionParser(option_list=option_list));
 
@@ -44,6 +46,7 @@ CountP2 <- numeric()
 SNPscalled <- numeric()
 PerHeterozygosity <- numeric()
 Overlap <- numeric()
+IdenticalWindows = numeric()
 AmbiWindows <- character()
 AmbiWindowCount <- character()
 TopHitsNumber <- numeric()
@@ -56,7 +59,7 @@ for (echscore in wind.filelist){
   if(inherits(likeLiwind, 'try-error') | inherits(ScoreAcc, 'try-error') |  inherits(jsonstat_per, 'try-error')){
     next
   }
-  
+
   plate <- c(plate, id)
   ranks <- order(-ScoreAcc$V4, na.last = TRUE, partial = ScoreAcc$V6)
   topscore <- ScoreAcc$V4[ranks[1]]
@@ -70,6 +73,8 @@ for (echscore in wind.filelist){
   nextlike <- ScoreAcc$V6[ranks[2]]
   PerHeterozygosity = c(PerHeterozygosity, jsonstat_per$percent_heterozygosity)
   Overlap = c(Overlap, jsonstat_per$overlap[1])
+  likeLiwind$V9 = mapply(identity_test, as.numeric(likeLiwind$V4), as.numeric(likeLiwind$V3), error_rate = opt$error_rate)
+  t_iden = length(table(likeLiwind$V8[which(likeLiwind$V9 < pval_thres)]))/max(likeLiwind$V8)
 
   if (file.exists( paste(filename, ".matches.json", sep = "") )){
     jsonstat <- try(fromJSON(paste(filename, ".matches.json", sep = "")))
@@ -91,6 +96,7 @@ for (echscore in wind.filelist){
   AmbiWindows <- c(AmbiWindows, paste(rownames(nclean), collapse = ":"))
   AmbiWindowCount <- c(AmbiWindowCount, paste(as.numeric(-nclean), collapse = ":"))
   NumWindows <- c(NumWindows, max(likeLiwind$V8))
+  IdenticalWindows <- c(IdenticalWindows, t_iden)
 
   LikeLihoodTopHit <- c(LikeLihoodTopHit, maxlike)
   LLRNextHit <- c(LLRNextHit, nextlike)
@@ -105,7 +111,7 @@ for (echscore in wind.filelist){
   GivParents <- c(GivParents, expParents)
 }
 
-DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, Overlap = Overlap, Heterozygosity = PerHeterozygosity, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
+DF <- cbind(PLATE = plate, FILENAME = Names, ExpectedParents = GivParents, TopHit = TopHit, NextHit = NextHit, TopScore = TopScore, FracScore = FracScore, TopHitsNumber = TopHitsNumber, LikelihoodRatio = LikeLihoodTopHit, NextHitLLR = LLRNextHit, SNPsCalled = SNPscalled, ObservedParent1 = FouParents1, ObservedParent2 = FouParents2, CountP1 = CountP1, CountP2 = CountP2, ScoreP1 = ScoreP1, ScoreP2 = ScoreP2, Overlap = Overlap, Heterozygosity = PerHeterozygosity, IdenticalWindows = IdenticalWindows, AmbigousWindows = AmbiWindows, AmbigousWindowCount = AmbiWindowCount)
 
 warnings()
 

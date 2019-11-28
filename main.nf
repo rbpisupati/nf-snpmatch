@@ -35,7 +35,8 @@ db_acc_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  publishDir "${input_folder}", mode: 'copy', overwrite: false
+  // publishDir "${input_folder}", mode: 'copy', overwrite: false
+  storeDir "${input_folder}"
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files

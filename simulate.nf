@@ -46,7 +46,7 @@ process identify_libraries {
     set val(acc_id), file(f_db), file(f_db_acc), val(num_snps) from input_files_dbs
 
     output:
-    file "${acc_id}_${num_snps}.snpmatch.scores.txt" into snpmatch_output
+    file "${acc_id}_${num_snps}.snpmatch*" into snpmatch_output
 
     script:
     """
@@ -56,7 +56,7 @@ process identify_libraries {
 
 input_csv = snpmatch_output.collect()
 
-process make_csv_inbred {
+process make_csv_simulate {
     publishDir "$params.outdir", mode: 'copy'
     label 'env_rcsv'
 
