@@ -25,7 +25,7 @@ inOptions.add_argument("-o", dest="output_file", default = "final_snpmatch_genot
 args = inOptions.parse_args()
 
 log.info("reading input files")
-input_files = glob(args.files_path + "/" + "*.scores.txt")
+input_files = glob(args.files_path + "/" + "*.snpmatch.scores.txt")
 input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split(args.file_sep, expand=True)
 if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0])
@@ -36,8 +36,7 @@ elif np.unique(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1]).shape[
 main_output_cols = ['FOL', "FILENAME", 'TopHitAccession', 'NextHit', 'ThirdHit','Score', 'FracScore', 'SNPsinfoAcc', 'SNPsCalled', 'MeanDepth', 'LikelihoodRatio','NextHitLLR', 'percent_heterozygosity', 'Overlap', 'TopHitsNumber','TopHits', "RefinedTopHit", "RefinedScore", "RefinedSNPs", "RefinedTopHitNumber"]
 main_output = pd.DataFrame(columns = main_output_cols, index = input_ids)
 main_output['FOL'] = args.folder_id
-
-assert input_ids.shape == np.array(input_files).shape, "Something is wrong"
+assert input_ids.shape == np.array(input_files).shape, "cannot determine ids for %s files, try changing --file_separation" % (input_ids.shape[0], np.array(input_files).shape[0] )
 
 for ef_ix in range(len(input_ids)):
     ScoreAcc = pd.read_csv(input_files[ef_ix], header = None, sep = "\t")
