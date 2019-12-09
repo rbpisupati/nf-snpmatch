@@ -44,7 +44,7 @@ main_output['ExpectedParents'] = args.expParents
 assert input_ids.shape == np.array(input_files).shape, "Something is wrong"
 
 for ef_ix in range(len(input_ids)):
-    # window_data = pd.read_csv(input_files[ef_ix],sep = "\t")
+    window_data = pd.read_csv(input_files[ef_ix],sep = "\t")
     ScoreAcc = pd.read_csv(re.sub("windowscore.txt$", "scores.txt", input_files[ef_ix]) , header = None, sep = "\t")
     ScoreAcc = ScoreAcc.sort_values([5, 3], ascending=[True, False])
     main_output.loc[input_ids[ef_ix], "FILENAME"] = re.sub(".windowscore.txt$", "", input_files[ef_ix])
@@ -56,6 +56,10 @@ for ef_ix in range(len(input_ids)):
     main_output.loc[input_ids[ef_ix], "LikelihoodRatio"] = ScoreAcc.iloc[0,4]
     main_output.loc[input_ids[ef_ix], "NextHitLLR"] = ScoreAcc.iloc[1,5]
     main_output.loc[input_ids[ef_ix], "TopHitsNumber"] = np.where(ScoreAcc.iloc[:,5] < snpmatch.lr_thres)[0].shape[0]
+    num_winds = np.unique(window_data['window_index']).shape[0]
+    main_output.loc[input_ids[ef_ix], "NumberofWindows"] = num_winds
+    identical_wind = np.where(window_data.groupby('window_index').max()['identical'] == 1)[0].shape[0]
+    main_output.loc[input_ids[ef_ix], "IdenticalWindows"] = snpmatch.get_fraction( identical_wind, num_winds )
     if not os.path.isfile(re.sub("windowscore.txt$", "matches.json", input_files[ef_ix])):
         continue
     with open(re.sub("windowscore.txt$", "matches.json", input_files[ef_ix])) as json_out:
@@ -66,8 +70,6 @@ for ef_ix in range(len(input_ids)):
     main_output.loc[input_ids[ef_ix], "CountP2"] = jsonstat['parents']['father'][1]
     main_output.loc[input_ids[ef_ix], "percent_heterozygosity"] = jsonstat['percent_heterozygosity']
     main_output.loc[input_ids[ef_ix], "Overlap"] = jsonstat['overlap'][0]
-    main_output.loc[input_ids[ef_ix], "NumberofWindows"] = jsonstat['identical_windows'][1]
-    main_output.loc[input_ids[ef_ix], "IdenticalWindows"] = jsonstat['identical_windows'][0]
     if len(jsonstat['matches']) > 0:
         main_output.loc[input_ids[ef_ix], "HomozygouWindows"] = pd.DataFrame(jsonstat['matches']).iloc[0:20,0].astype(str).str.cat(sep=',')
         main_output.loc[input_ids[ef_ix], "HomozygouWindowsCount"] = pd.DataFrame(jsonstat['matches']).iloc[0:20,1].astype(str).str.cat(sep=',')
