@@ -67,7 +67,7 @@ if (params.func == 'inbred'){
 
     script:
     """
-    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch
+    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch --refine
     """
   }
 
@@ -75,7 +75,6 @@ if (params.func == 'inbred'){
 
   process make_csv_inbred {
     publishDir "$params.outdir", mode: 'copy'
-    label 'env_rcsv'
 
     input:
     file "*" from input_csv
@@ -84,7 +83,7 @@ if (params.func == 'inbred'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/01_makeCSVTable_inbred.R -o intermediate_modified.csv -f $params.outdir
+    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -o intermediate_modified.csv -f $params.outdir
     """
   }
 
@@ -112,7 +111,6 @@ if (params.func == 'cross'){
   input_csv = snpmatch_output.collect()
 
   process make_csv_cross {
-    label 'env_rcsv'
     publishDir "$params.outdir", mode: 'copy'
 
     input:
@@ -122,7 +120,7 @@ if (params.func == 'cross'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/02_makeCSVTable_csmatch.R -o intermediate_modified.csv -f $params.outdir
+    python $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -o intermediate_modified.csv -f $params.outdir
     """
   }
 }
