@@ -44,7 +44,7 @@ main_output['ExpectedParents'] = args.expParents
 assert input_ids.shape == np.array(input_files).shape, "Something is wrong"
 
 for ef_ix in range(len(input_ids)):
-    window_data = pd.read_csv(input_files[ef_ix],sep = "\t")
+    # window_data = pd.read_csv(input_files[ef_ix],sep = "\t")
     ScoreAcc = pd.read_csv(re.sub("windowscore.txt$", "scores.txt", input_files[ef_ix]) , header = None, sep = "\t")
     ScoreAcc = ScoreAcc.sort_values([5, 3], ascending=[True, False])
     main_output.loc[input_ids[ef_ix], "FILENAME"] = re.sub(".windowscore.txt$", "", input_files[ef_ix])
