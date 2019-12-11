@@ -3,7 +3,7 @@
 Simply run nextflow pipeline as:
 // Better to use imputed dataset for snpmatch cross
 
-nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
+nextflow run simulate.nf --input_acclist "*csv" --err_rate 0.01 --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
 */
 /*
  * SET UP CONFIGURATION VARIABLES
@@ -39,18 +39,22 @@ input_files_dbs = input_accs.combine(db_file).combine(db_acc_file).spread(num_po
 
 process identify_libraries {
     tag { "${acc_id}_${num_snps}" }
-    publishDir "$params.outdir/snps_${num_snps}", mode: 'copy'
+    publishDir "$params.outdir/snps_${num_snps}", mode: 'copy', saveAs: {filename -> 
+            if ( filename.indexOf("bed") > 0 ) "$filename"
+            else null  }
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
 
     input:
     set val(acc_id), file(f_db), file(f_db_acc), val(num_snps) from input_files_dbs
 
     output:
+    file "${acc_id}_${num_snps}.bed" into simulated_bed
     file "${acc_id}_${num_snps}.snpmatch*" into snpmatch_output
 
     script:
     """
-    snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps -o ${acc_id}_${num_snps}.snpmatch -p $params.err_rate
+    snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps -o ${acc_id}_${num_snps}.bed -p $params.err_rate
+    snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps}.bed -o ${acc_id}_${num_snps}.snpmatch
     """
 }
 
@@ -58,7 +62,6 @@ input_csv = snpmatch_output.collect()
 
 process make_csv_simulate {
     publishDir "$params.outdir", mode: 'copy'
-    label 'env_rcsv'
 
     input:
     file "*" from input_csv
@@ -67,6 +70,6 @@ process make_csv_simulate {
     file "intermediate_modified.csv" into output_csv
 
     """
-    Rscript $workflow.projectDir/scripts/05_makeCSVTable_simulate.R -o intermediate_modified.csv
+    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -o intermediate_modified.csv -f $params.err_rate
     """
 }
