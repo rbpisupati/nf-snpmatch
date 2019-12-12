@@ -26,6 +26,7 @@ args = inOptions.parse_args()
 
 log.info("reading input files")
 input_files = glob(args.files_path + "/" + "*.snpmatch.scores.txt")
+assert len(input_files) > 0, "there are  no files with snpmatch scores in the folder."
 input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split(args.file_sep, expand=True)
 if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0])
