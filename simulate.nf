@@ -39,9 +39,9 @@ input_files_dbs = input_accs.combine(db_file).combine(db_acc_file).spread(num_po
 
 process identify_libraries {
     tag { "${acc_id}_${num_snps}" }
-    publishDir "$params.outdir/snps_${num_snps}", mode: 'copy', saveAs: {filename -> 
-            if ( filename.indexOf("bed") > 0 ) "$filename"
-            else null  }
+    publishDir "$params.outdir", mode: 'copy', saveAs: {filename ->
+            if ( filename.indexOf("bed") > 0 ) "snps_${num_snps}/$filename"
+            else "snpmatch/$filename"  }
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
 
     input:
@@ -49,12 +49,13 @@ process identify_libraries {
 
     output:
     file "${acc_id}_${num_snps}.bed" into simulated_bed
-    file "${acc_id}_${num_snps}.snpmatch*" into snpmatch_output
+    file "snpmatch_${acc_id}_${num_snps}" into snpmatch_output
 
     script:
     """
     snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps -o ${acc_id}_${num_snps}.bed -p $params.err_rate
-    snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps}.bed -o ${acc_id}_${num_snps}.snpmatch
+    mkdir -p snpmatch_${acc_id}_${num_snps}
+    snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps}.bed -o  snpmatch_${acc_id}_${num_snps}/${acc_id}_${num_snps}.snpmatch
     """
 }
 
@@ -70,6 +71,8 @@ process make_csv_simulate {
     file "intermediate_modified.csv" into output_csv
 
     """
-    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -o intermediate_modified.csv -f $params.err_rate
+    mkdir all_results
+    ln -s -r snpmatch_*/* all_results
+    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -i all_results -o intermediate_modified.csv -f $params.err_rate
     """
 }

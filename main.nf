@@ -35,8 +35,8 @@ db_acc_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  // publishDir "${input_folder}", mode: 'copy', overwrite: false
-  storeDir "${input_folder}"
+  publishDir "${input_folder}", mode: 'copy', overwrite: false
+  // storeDir "${input_folder}"
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -63,11 +63,12 @@ if (params.func == 'inbred'){
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
     output:
-    file "${prefix}.snpmatch*" into snpmatch_output
+    file "snpmatch_${prefix}" into snpmatch_output
 
     script:
     """
-    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.snpmatch --refine
+    mkdir -p snpmatch_${prefix}
+    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o snpmatch_${prefix}/${prefix} --refine
     """
   }
 
@@ -83,7 +84,9 @@ if (params.func == 'inbred'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -o intermediate_modified.csv -f $params.outdir
+    mkdir all_results
+    ln -s -r snpmatch_*/* all_results
+    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -i all_results -o intermediate_modified.csv -f $params.outdir
     """
   }
 
@@ -100,11 +103,12 @@ if (params.func == 'cross'){
     set val(prefix), file(input_npz), file(f_db), file(f_db_acc) from input_files_dbs
 
     output:
-    file "${prefix}.csmatch*" into snpmatch_output
+    file "csmatch_${prefix}" into snpmatch_output
 
     script:
     """
-    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o ${prefix}.csmatch --genome $params.genome
+    mkdir -p snpmatch_${prefix}
+    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o csmatch_${prefix}/${prefix}.csmatch --genome $params.genome
     """
   }
 
@@ -120,7 +124,9 @@ if (params.func == 'cross'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    python $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -o intermediate_modified.csv -f $params.outdir
+    mkdir all_results
+    ln -s -r snpmatch_*/* all_results
+    python $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -i all_results -o intermediate_modified.csv -f $params.outdir
     """
   }
 }

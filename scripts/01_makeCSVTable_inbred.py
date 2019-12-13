@@ -25,7 +25,10 @@ inOptions.add_argument("-o", dest="output_file", default = "final_snpmatch_genot
 args = inOptions.parse_args()
 
 log.info("reading input files")
-input_files = glob(args.files_path + "/" + "*.snpmatch.scores.txt")
+input_files = glob(args.files_path + "/" + "*.scores.txt")
+input_files = pd.Series(input_files).astype(str)
+input_files = input_files[~input_files.str.contains('refined.scores.txt',  regex=True)]
+input_files = np.array(input_files)
 assert len(input_files) > 0, "there are  no files with snpmatch scores in the folder."
 input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split(args.file_sep, expand=True)
 if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
