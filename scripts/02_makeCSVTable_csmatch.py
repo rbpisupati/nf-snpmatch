@@ -77,5 +77,5 @@ for ef_ix in range(len(input_ids)):
 
 
 log.info("writing output into %s" % args.output_file )
-main_output.to_csv(args.output_file, sep = "\t")
+main_output.to_csv(args.output_file)
 log.info("finished!")
