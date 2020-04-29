@@ -9,6 +9,8 @@ nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_
  * SET UP CONFIGURATION VARIABLES
 */
 params.input = false
+// change input_column when providing bed file as input to read nth column
+params.input_column = false
 params.project = "the1001genomes"
 params.outdir = 'snpmatch_1135g'
 params.func = 'inbred'
@@ -46,9 +48,16 @@ process parse_inputfiles {
   file "${input_file}.snpmatch.stats.json" into input_stats
 
   script:
-  """
-  snpmatch parser -v -i $input_file
-  """
+  if (params.input_column){
+    """
+    awk '{print \$1 "\t" \$2 "\t" \$${params.input_column}}' $input_file > ${input_file}.col.bed
+    snpmatch parser -v -i ${input_file}.col.bed -o ${input_file}.snpmatch
+    """
+  } else{
+    """
+    snpmatch parser -v -i $input_file -o ${input_file}.snpmatch
+    """
+  }
 }
 
 input_files_dbs = input_gzips.combine(db_file).combine(db_acc_file)
