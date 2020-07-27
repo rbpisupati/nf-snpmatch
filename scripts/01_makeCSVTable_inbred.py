@@ -67,7 +67,7 @@ for ef_ix in range(len(input_ids)):
     if len(jsonstat['matches']) == 1:
         main_output.loc[input_ids[ef_ix], "TopHits"] = ""
     elif len(jsonstat['matches']) <= 10:
-        main_output.loc[input_ids[ef_ix], "TopHits"] = pd.DataFrame(jsonstat['matches']).iloc[:,0].sort_values().str.cat(sep=',')
+        main_output.loc[input_ids[ef_ix], "TopHits"] = pd.DataFrame(jsonstat['matches']).iloc[:,0].sort_values().str.cat(sep=':')
     else:
         main_output.loc[input_ids[ef_ix], "TopHits"] = "TooManytoPrint"
     if os.path.isfile(re.sub("scores.txt$", "refined.scores.txt", input_files[ef_ix])):

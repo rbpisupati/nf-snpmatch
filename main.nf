@@ -3,7 +3,7 @@
 Simply run nextflow pipeline as:
 // Better to use imputed dataset for snpmatch cross
 
-nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
+nextflow run submit.snpmatch.nf --input "*vcf" --db hdf5_file --outdir output_folder
 */
 /*
  * SET UP CONFIGURATION VARIABLES
@@ -33,8 +33,8 @@ db_file = Channel
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  publishDir "${input_folder}", mode: 'copy', overwrite: false
-  // storeDir "${input_folder}"
+  // publishDir "${input_folder}", mode: 'copy', overwrite: false
+  storeDir "${input_folder}"
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -131,7 +131,7 @@ if (params.func == 'cross'){
     """
     mkdir all_results
     ln -s -r csmatch_*/* all_results
-    python $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -i all_results -o intermediate_modified.csv -f $params.outdir
+    python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -i all_results -o intermediate_modified.csv -f $params.outdir
     """
   }
 }
