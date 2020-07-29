@@ -3,60 +3,86 @@
 Simply run nextflow pipeline as:
 // Better to use imputed dataset for snpmatch cross
 
-nextflow run simulate.nf --input_acclist "*csv" --err_rate 0.01 --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
+nextflow run simulate.nf --f1 num_snps_for_f1 --accList "accList.txt" --err_rate 0.01 --db hdf5_file --db_acc hdf5_acc_file --outdir output_folder
 */
 /*
  * SET UP CONFIGURATION VARIABLES
 */
-params.input_acclist = false
+params.accList = false
+params.f1 = false  // provide number of SNPs to be used here for F1
 
 params.outdir = 'simulate'
 params.err_rate = 0.01
 
 // databases
 params.db = "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
-params.db_acc= "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.acc.hdf5"
-
-num_positions = Channel
-    .from(100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,2000000)
-
-//input acc list
-input_accs = Channel
-    .fromPath ( params.input_acclist )
-    .splitCsv()
-    .ifEmpty { exit 1, "Cannot find any input files matching" }
 
 db_file = Channel
     .fromPath ( params.db )
-    .ifEmpty { exit 1, "please provide hdf5 file as a database" }
+    .map{ [ file("${it}"), file("${it.parent}/${it.baseName}.acc.hdf5") ] }
+    .ifEmpty { exit 1, "please provide hdf5 files as a database" }
 
-db_acc_file = Channel
-    .fromPath ( params.db_acc )
-    .ifEmpty { exit 1, "please provide hdf5 acc file as a database" }
+/*
+  Do all pairwise combinations for an F1
+*/
+
+if (params.f1 ){
+    //input acc list
+    ecotype_ids = Channel
+        .fromPath ( params.accList )
+        .splitCsv(header: false)
+        .ifEmpty { exit 1, "Cannot find any input files matching: ${params.input}\nNB: Path needs to be enclosed in quotes!\n" }
+        .map{ vcf -> vcf }
+        .collect()
+
+    input_accs = ecotype_ids
+        .map { vcf -> [vcf, vcf].combinations().findAll { x, y -> x < y } }
+
+    input_files_dbs = db_file.spread(input_accs) //.combine(db_file).println()
+
+} else {
+
+    num_positions = Channel
+        .from(100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,3000,4000,5000,6000,7000,8000,9000,10000,20000,30000,40000,50000,60000,70000,80000,90000,100000,200000,300000,400000,500000,600000,700000,800000,900000,1000000,2000000)
+
+    input_accs = Channel
+        .fromPath ( params.accList )
+        .splitCsv()
+        .ifEmpty { exit 1, "Cannot find any input files matching" }
+
+    input_files_dbs = db_file.combine(input_accs).spread(num_positions)
+
+}
 
 
-input_files_dbs = input_accs.combine(db_file).combine(db_acc_file).spread(num_positions)
-
-process identify_libraries {
-    tag { "${acc_id}_${num_snps}" }
+process simulateSNPs {
+    tag { "${acc_id}_${num_snps_or_f1_father}" }
     publishDir "$params.outdir", mode: 'copy', saveAs: {filename ->
-            if ( filename.indexOf("bed") > 0 ) "snps_${num_snps}/$filename"
+            if ( filename.indexOf("bed") > 0 ) "snps_${num_snps_or_f1_father}/$filename"
             else "snpmatch/$filename"  }
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
 
     input:
-    set val(acc_id), file(f_db), file(f_db_acc), val(num_snps) from input_files_dbs
+    set file(f_db), file(f_db_acc), val(acc_id), val(num_snps_or_f1_father) from input_files_dbs
 
     output:
-    file "${acc_id}_${num_snps}.bed" into simulated_bed
-    file "snpmatch_${acc_id}_${num_snps}" into snpmatch_output
+    file "${acc_id}*.bed" into simulated_bed
+    file "snpmatch_${acc_id}*" into snpmatch_output
 
     script:
-    """
-    snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps -o ${acc_id}_${num_snps}.bed -p $params.err_rate
-    mkdir -p snpmatch_${acc_id}_${num_snps}
-    snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps}.bed -o  snpmatch_${acc_id}_${num_snps}/${acc_id}_${num_snps}.snpmatch
-    """
+    if (params.f1 ){
+        """
+        snpmatch simulate --f1 -v -d $f_db -e $f_db_acc -a "${acc_id}x${num_snps_or_f1_father}" -n $params.f1 -o ${acc_id}x${num_snps_or_f1_father}.bed -p $params.err_rate
+        mkdir -p snpmatch_${acc_id}x${num_snps_or_f1_father}
+        snpmatch cross -v -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o snpmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
+        """
+    } else {
+        """
+        snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps_or_f1_father -o ${acc_id}_${num_snps_or_f1_father}.bed -p $params.err_rate
+        mkdir -p snpmatch_${acc_id}_${num_snps_or_f1_father}
+        snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps_or_f1_father}.bed -o  snpmatch_${acc_id}_${num_snps_or_f1_father}/${acc_id}_${num_snps_or_f1_father}.snpmatch
+        """
+    }
 }
 
 input_csv = snpmatch_output.collect()
@@ -70,9 +96,18 @@ process make_csv_simulate {
     output:
     file "intermediate_modified.csv" into output_csv
 
-    """
-    mkdir all_results
-    ln -s -r snpmatch_*/* all_results
-    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -i all_results -o intermediate_modified.csv -f $params.err_rate
-    """
+    script:
+    if (params.f1 ){
+        """
+        mkdir all_results
+        ln -s -r snpmatch_*/* all_results
+        python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -i all_results -o intermediate_modified.csv -f $params.outdir
+        """
+    } else {
+        """
+        mkdir all_results
+        ln -s -r snpmatch_*/* all_results
+        python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -i all_results -o intermediate_modified.csv -f $params.err_rate
+        """
+    }
 }
