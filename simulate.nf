@@ -10,6 +10,7 @@ nextflow run simulate.nf --f1 num_snps_for_f1 --accList "accList.txt" --err_rate
 */
 params.accList = false
 params.f1 = false  // provide number of SNPs to be used here for F1
+params.het_fraction = 0.1 // only for simulating F1 
 
 params.outdir = 'simulate'
 params.err_rate = 0.01
@@ -72,8 +73,8 @@ process simulateSNPs {
     script:
     if (params.f1 ){
         """
-        snpmatch simulate --f1 -v -d $f_db -e $f_db_acc -a "${acc_id}x${num_snps_or_f1_father}" -n $params.f1 -o ${acc_id}x${num_snps_or_f1_father}.bed -p $params.err_rate
-        mkdir -p snpmatch_${acc_id}x${num_snps_or_f1_father}
+        snpmatch simulate --f1 --het_frac $params.het_fraction -v -d $f_db -e $f_db_acc -a "${acc_id}x${num_snps_or_f1_father}" -n $params.f1 -o ${acc_id}x${num_snps_or_f1_father}.bed -p $params.err_rate
+        mkdir -p csmatch_${acc_id}x${num_snps_or_f1_father}
         snpmatch cross -v -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o snpmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
         """
     } else {
