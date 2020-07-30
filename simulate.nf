@@ -56,7 +56,7 @@ if (params.f1 ){
 
 
 process simulateSNPs {
-    tag { "${acc_id}_${num_snps_or_f1_father}" }
+    tag { "${acc_id}_x${num_snps_or_f1_father}" }
     publishDir "$params.outdir", mode: 'copy', saveAs: {filename ->
             if ( filename.indexOf("bed") > 0 ) "snps_${num_snps_or_f1_father}/$filename"
             else "snpmatch/$filename"  }
@@ -99,15 +99,11 @@ process make_csv_simulate {
     script:
     if (params.f1 ){
         """
-        mkdir all_results
-        ln -s -r snpmatch_*/* all_results
-        python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -i all_results -o intermediate_modified.csv -f $params.outdir
+        python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
         """
     } else {
         """
-        mkdir all_results
-        ln -s -r snpmatch_*/* all_results
-        python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py -i all_results -o intermediate_modified.csv -f $params.err_rate
+        python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py --dirs -i ./ -o intermediate_modified.csv -f $params.err_rate
         """
     }
 }

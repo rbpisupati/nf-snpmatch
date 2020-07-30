@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 inOptions = argparse.ArgumentParser(description='get a genotype matrix')
 inOptions.add_argument("-i", dest="files_path", default = "./", help="path to the snpmatch output files")
+inOptions.add_argument("--dirs", action="store_true", dest="dirs", default=False, help="Input files are in folders")
 inOptions.add_argument("--file_spearation", dest="file_sep", default = ".", type = str, help="file name to file id (is it . separated or _)")
 inOptions.add_argument("-f", dest="folder_id", help="Plate ID to be added in the CSV file")
 inOptions.add_argument("-o", dest="output_file", default = "final_snpmatch_genotyper.csv", type=str, help="output file")
@@ -25,7 +26,10 @@ inOptions.add_argument("-o", dest="output_file", default = "final_snpmatch_genot
 args = inOptions.parse_args()
 
 log.info("reading input files")
-input_files = glob(args.files_path + "/" + "*.scores.txt")
+if args.dirs:
+    input_files = glob(args.files_path + "/snpmatch_*" + "/*.scores.txt")
+else:
+    input_files = glob(args.files_path + "/" + "*.scores.txt")
 input_files = pd.Series(input_files).astype(str)
 input_files = input_files[~input_files.str.contains('refined.scores.txt',  regex=True)]
 input_files = np.array(input_files)

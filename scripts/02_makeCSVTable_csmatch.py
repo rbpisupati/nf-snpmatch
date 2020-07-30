@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 inOptions = argparse.ArgumentParser(description='get a genotype matrix')
 inOptions.add_argument("-i", dest="files_path", default = "./", help="path to the snpmatch output files")
 inOptions.add_argument("--file_spearation", dest="file_sep", default = ".", type = str, help="file name to file id (is it . separated or _)")
+inOptions.add_argument("--dirs", action="store_true", dest="dirs", default=False, help="Input files are in folders")
 inOptions.add_argument("-e", dest="expParents", help="expected parents, ex: 6090x9416")
 inOptions.add_argument("-f", dest="folder_id", help="Plate ID to be added in the CSV file")
 inOptions.add_argument("-o", dest="output_file", default = "final_csmatch_genotyper.csv", type=str, help="output file")
@@ -25,7 +26,11 @@ inOptions.add_argument("-o", dest="output_file", default = "final_csmatch_genoty
 args = inOptions.parse_args()
 
 log.info("reading input files")
-input_files = glob(args.files_path + "/" + "*.windowscore.txt")
+if args.dirs:
+    input_files = glob(args.files_path + "/csmatch_*/" + "*.windowscore.txt")
+else:
+    input_files = glob(args.files_path + "/" + "*.windowscore.txt")
+
 assert len(input_files) > 0, "there are  no files with snpmatch scores in the folder."
 input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).astype(str).str.split(args.file_sep, expand=True)
 if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
