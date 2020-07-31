@@ -68,14 +68,14 @@ process simulateSNPs {
 
     output:
     file "${acc_id}*.bed" into simulated_bed
-    file "snpmatch_${acc_id}*" into snpmatch_output
+    file "*match_${acc_id}*" into snpmatch_output
 
     script:
     if (params.f1 ){
         """
         snpmatch simulate --f1 --het_frac $params.het_fraction -v -d $f_db -e $f_db_acc -a "${acc_id}x${num_snps_or_f1_father}" -n $params.f1 -o ${acc_id}x${num_snps_or_f1_father}.bed -p $params.err_rate
         mkdir -p csmatch_${acc_id}x${num_snps_or_f1_father}
-        snpmatch cross -v -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o snpmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
+        snpmatch cross -v -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o csmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
         """
     } else {
         """
