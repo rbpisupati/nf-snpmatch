@@ -15,6 +15,7 @@ params.project = "the1001genomes"
 params.outdir = 'snpmatch_1135g'
 params.func = 'inbred'
 params.genome = "athaliana_tair10"
+params.skip_db_hets = false
 // databases
 params.db = "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
 
@@ -71,9 +72,10 @@ if (params.func == 'inbred'){
     file "snpmatch_${prefix}" into snpmatch_output
 
     script:
+    skip_db_hets = params.skip_db_hets != false ? "--skip_db_hets" : ''
     """
     mkdir -p snpmatch_${prefix}
-    snpmatch inbred -v -d $f_db -e $f_db_acc -i $input_npz -o snpmatch_${prefix}/${prefix} --refine
+    snpmatch inbred -v  $skip_db_hets -d $f_db -e $f_db_acc -i $input_npz -o snpmatch_${prefix}/${prefix} --refine
     """
   }
 
@@ -109,9 +111,10 @@ if (params.func == 'cross'){
     file "csmatch_${prefix}" into snpmatch_output
 
     script:
+    skip_db_hets = params.skip_db_hets != false ? "--skip_db_hets" : ''
     """
     mkdir -p csmatch_${prefix}
-    snpmatch cross -v -d $f_db -e $f_db_acc -i $input_npz -o csmatch_${prefix}/${prefix}.csmatch --genome $params.genome
+    snpmatch cross -v $skip_db_hets -d $f_db -e $f_db_acc -i $input_npz -o csmatch_${prefix}/${prefix}.csmatch --genome $params.genome
     """
   }
 

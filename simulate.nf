@@ -14,6 +14,7 @@ params.het_fraction = 0.1 // only for simulating F1
 
 params.outdir = 'simulate'
 params.err_rate = 0.01
+params.skip_db_hets = false
 
 // databases
 params.db = "/groups/nordborg/projects/the1001genomes/scratch/rahul/101.VCF_1001G_1135/1135g_SNP_BIALLELIC.hetfiltered.snpmat.6oct2015.hdf5"
@@ -71,17 +72,18 @@ process simulateSNPs {
     file "*match_${acc_id}*" into snpmatch_output
 
     script:
+    skip_db_hets = params.skip_db_hets != false ? "--skip_db_hets" : ''
     if (params.f1 ){
         """
         snpmatch simulate --f1 --het_frac $params.het_fraction -v -d $f_db -e $f_db_acc -a "${acc_id}x${num_snps_or_f1_father}" -n $params.f1 -o ${acc_id}x${num_snps_or_f1_father}.bed -p $params.err_rate
         mkdir -p csmatch_${acc_id}x${num_snps_or_f1_father}
-        snpmatch cross -v -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o csmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
+        snpmatch cross -v $skip_db_hets -d $f_db -e $f_db_acc -i ${acc_id}x${num_snps_or_f1_father}.bed -o csmatch_${acc_id}x${num_snps_or_f1_father}/${acc_id}x${num_snps_or_f1_father}.snpmatch
         """
     } else {
         """
         snpmatch simulate -v -d $f_db -e $f_db_acc -a $acc_id -n $num_snps_or_f1_father -o ${acc_id}_${num_snps_or_f1_father}.bed -p $params.err_rate
         mkdir -p snpmatch_${acc_id}_${num_snps_or_f1_father}
-        snpmatch inbred --refine  -v -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps_or_f1_father}.bed -o  snpmatch_${acc_id}_${num_snps_or_f1_father}/${acc_id}_${num_snps_or_f1_father}.snpmatch
+        snpmatch inbred --refine -v $skip_db_hets -d $f_db -e $f_db_acc -i ${acc_id}_${num_snps_or_f1_father}.bed -o  snpmatch_${acc_id}_${num_snps_or_f1_father}/${acc_id}_${num_snps_or_f1_father}.snpmatch
         """
     }
 }
