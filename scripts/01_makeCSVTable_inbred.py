@@ -32,13 +32,14 @@ else:
     input_files = glob(args.files_path + "/" + "*.scores.txt")
 input_files = pd.Series(input_files).astype(str)
 input_files = input_files[~input_files.str.contains('refined.scores.txt',  regex=True)]
-input_files = np.array(input_files)
 assert len(input_files) > 0, "there are  no files with snpmatch scores in the folder."
-input_ids = pd.Series([ os.path.basename(efile) for efile in input_files]).str.split(args.file_sep, expand=True)
+input_ids = input_files.apply( os.path.basename ).str.split(args.file_sep, expand=True)
 if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0])
 elif np.unique(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1])
+else:
+    input_ids = input_files.apply( os.path.basename ).str.replace( ".scores.txt", "" )
 
 
 main_output_cols = ['FOL', "FILENAME", 'TopHitAccession', 'NextHit', 'ThirdHit','Score', 'FracScore', 'SNPsinfoAcc', 'SNPsCalled', 'MeanDepth', 'LikelihoodRatio','NextHitLLR', 'percent_heterozygosity', 'Overlap', 'TopHitsNumber','TopHits', "RefinedTopHit", "RefinedScore", "RefinedSNPs", "RefinedTopHitNumber"]

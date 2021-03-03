@@ -26,16 +26,17 @@ input_files = Channel
     .map { [ "$it.baseName", "${it.getParent()}", file("$it") ] }
     .ifEmpty { exit 1, "Cannot find any input files matching: ${params.input}\nNB: Path needs to be enclosed in quotes!\n" }
 
-db_file = Channel
+Channel
     .fromPath ( params.db )
     .map{ [ file("${it}"), file("${it.parent}/${it.baseName}.acc.hdf5") ] }
     .ifEmpty { exit 1, "please provide hdf5 files as a database" }
+    .into{ db_file; db_file_for_csv}
 
 
 process parse_inputfiles {
   tag { "${prefix}" }
-  // publishDir "${input_folder}", mode: 'copy', overwrite: false
-  storeDir "${input_folder}"
+  publishDir "${input_folder}", mode: 'copy'
+  // storeDir "${input_folder}"
 
   input:
   set val(prefix), val(input_folder), file(input_file) from input_files
@@ -101,6 +102,7 @@ if (params.func == 'cross'){
   process cross_libraries {
     tag { "${prefix}" }
     publishDir "$params.outdir", mode: 'copy'
+    // storeDir "$params.outdir"
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
     // cross generally puts out many errors based on the number of SNPs in a window and chromosome
 
@@ -125,12 +127,13 @@ if (params.func == 'cross'){
 
     input:
     file "*" from input_csv
+    set file(f_db), file(f_db_acc) from db_file_for_csv
 
     output:
-    file "intermediate_modified.csv" into output_csv
+    file "intermediate_modified*" into output_csv
 
     """
-    python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
+    python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -d $f_db --dirs -i ./ -o intermediate_modified -f $params.outdir
     """
   }
 }
