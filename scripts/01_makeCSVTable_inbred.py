@@ -39,7 +39,9 @@ if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
 elif np.unique(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1])
 else:
-    input_ids = input_files.apply( os.path.basename ).str.replace( ".scores.txt", "" )
+    input_ids = input_files.apply( os.path.basename ).str.replace( ".scores.txt", "" ).values
+
+input_files = input_files.values
 
 
 main_output_cols = ['FOL', "FILENAME", 'TopHitAccession', 'NextHit', 'ThirdHit','Score', 'FracScore', 'SNPsinfoAcc', 'SNPsCalled', 'MeanDepth', 'LikelihoodRatio','NextHitLLR', 'percent_heterozygosity', 'Overlap', 'TopHitsNumber','TopHits', "RefinedTopHit", "RefinedScore", "RefinedSNPs", "RefinedTopHitNumber"]

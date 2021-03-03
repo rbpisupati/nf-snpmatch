@@ -41,8 +41,9 @@ if np.unique(input_ids.iloc[:,0]).shape[0] == input_ids.shape[0]:
 elif np.unique(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1]).shape[0] == input_ids.shape[0]:
     input_ids = np.array(input_ids.iloc[:,0] + args.file_sep + input_ids.iloc[:,1])
 else:
-    input_ids = input_files.apply( os.path.basename ).str.replace( ".windowscore.txt", "" )
+    input_ids = input_files.apply( os.path.basename ).str.replace( ".windowscore.txt", "" ).values
 
+input_files = input_files.values
 
 main_output_cols = ['FOL', "FILENAME", "ExpectedParents", 'TopHit', 'NextHit', 'Score', 'FracScore', 'SNPsCalled', 'LikelihoodRatio','NextHitLLR', 'TopHitsNumber', "ObservedParent1", "ObservedParent2", "CountP1", "CountP2", 'percent_heterozygosity', 'Overlap', "IdenticalWindows", "NumberofWindows", "HomozygousWindow", "HomozygousWindowCount"]
 main_output = pd.DataFrame(columns = main_output_cols, index = input_ids)
