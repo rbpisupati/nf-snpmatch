@@ -92,5 +92,5 @@ for ef_ix in range(len(input_ids)):
 
 log.info("writing output into %s" % args.output_file )
 main_output.to_csv(args.output_file + ".csv")
-sample_ancestry.to_csv(args.output_file + "iden_ancestry.csv")
+sample_ancestry.to_csv(args.output_file + "_ancestry.csv")
 log.info("finished!")
