@@ -92,7 +92,7 @@ if (params.func == 'inbred'){
     file "intermediate_modified.csv" into output_csv
 
     """
-    python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
+    python $workflow.projectDir/bin/01_makeCSVTable_inbred.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
     """
   }
 
@@ -133,7 +133,7 @@ if (params.func == 'cross'){
     file "intermediate_modified*" into output_csv
 
     """
-    python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py -d $f_db --dirs -i ./ -o intermediate_modified -f $params.outdir
+    python  $workflow.projectDir/bin/02_makeCSVTable_csmatch.py -d $f_db --dirs -i ./ -o intermediate_modified -f $params.outdir
     """
   }
 }

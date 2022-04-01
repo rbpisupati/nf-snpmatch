@@ -102,11 +102,11 @@ process make_csv_simulate {
     script:
     if (params.f1 ){
         """
-        python  $workflow.projectDir/scripts/02_makeCSVTable_csmatch.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
+        python  $workflow.projectDir/bin/02_makeCSVTable_csmatch.py --dirs -i ./ -o intermediate_modified.csv -f $params.outdir
         """
     } else {
         """
-        python $workflow.projectDir/scripts/01_makeCSVTable_inbred.py --dirs -i ./ -o intermediate_modified.csv -f $params.err_rate
+        python $workflow.projectDir/bin/01_makeCSVTable_inbred.py --dirs -i ./ -o intermediate_modified.csv -f $params.err_rate
         """
     }
 }

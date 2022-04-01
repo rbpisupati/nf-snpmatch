@@ -109,7 +109,7 @@ if (params.hmm) {
     file "genotyper.csv" into output_table
 
     """
-    python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper.csv -i ./
+    python $workflow.projectDir/bin/03_makeCSVTable_CrossGenotyper.py -o genotyper.csv -i ./
     """
   }
 
@@ -124,7 +124,7 @@ if (params.hmm) {
     file "genotyper_temp.csv" into output_table
 
     """
-    python $workflow.projectDir/scripts/03_makeCSVTable_CrossGenotyper.py -o genotyper_temp.csv -i ./
+    python $workflow.projectDir/bin/03_makeCSVTable_CrossGenotyper.py -o genotyper_temp.csv -i ./
     """
   }
 
@@ -139,7 +139,7 @@ if (params.hmm) {
     file "genotyper.csv" into filled_csv
 
     """
-    Rscript $workflow.projectDir/scripts/04_fill_geno.R -i $incsv -o genotyper
+    Rscript $workflow.projectDir/bin/04_fill_geno.R -i $incsv -o genotyper
     """
   }
 
