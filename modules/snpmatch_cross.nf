@@ -5,16 +5,16 @@ params.genome = "athaliana_tair10"
 
 workflow SNPMATCH_CROSS {
     take:
-    input_vcf
+    ch_input_vcf
     input_hdf5
     output_folder
 
     main:
 
-    ch_input_vcf = Channel
-        .fromPath ( input_vcf )
-        .map { [ "$it.baseName", "${it.getParent()}", file("$it") ] }
-        .ifEmpty { exit 1, "Cannot find any input files matching: ${input_vcf}\nNB: Path needs to be enclosed in quotes!\n" }
+    // ch_input_vcf = Channel
+    //     .fromPath ( input_vcf )
+    //     .map { [ "$it.baseName", "${it.getParent()}", file("$it") ] }
+    //     .ifEmpty { exit 1, "Cannot find any input files matching: ${input_vcf}\nNB: Path needs to be enclosed in quotes!\n" }
 
     ch_input_hdf5 = Channel
         .fromPath ( input_hdf5 )
@@ -23,7 +23,7 @@ workflow SNPMATCH_CROSS {
     
 
     identify_libs = csmatch_libraries( ch_input_vcf, ch_input_hdf5.collect(), output_folder )
-    out_csv = make_csv_cross( identify_libs.csmatch_out.collect(), ch_input_hdf5.collect(), output_folder )
+    out_csv = make_csv_cross( identify_libs.csmatch_out_for_csv.collect(), ch_input_hdf5.collect(), output_folder )
 
 
     emit:
@@ -33,17 +33,19 @@ workflow SNPMATCH_CROSS {
 
 process csmatch_libraries {
     tag { "${sample_id}" }
+    conda "/users/rahul.pisupati/.conda/envs/snpmatch-5.0/"
 
     publishDir "$outdir", mode: 'copy'
     errorStrategy { task.exitStatus in [143,137] ? 'retry' : 'ignore' }
 
     input:
-    tuple val(sample_id), path(vcf)
+    tuple val(sample_id), path(vcf), path(vcf_idx)
     tuple path(f_db), path(f_db_acc)
     val(outdir)
 
     output:
-    tuple val(sample_id), path("snpmatch_${sample_id}"), emit: csmatch_out
+    tuple val(sample_id), path("csmatch_${sample_id}"), emit: csmatch_out
+    path("csmatch_${sample_id}"), emit: csmatch_out_for_csv
 
     script:
     skip_db_hets = params.skip_db_hets != false ? "--skip_db_hets" : ''
@@ -56,6 +58,7 @@ process csmatch_libraries {
 
 process make_csv_cross {
     publishDir "$output_id", mode: 'copy'
+    conda "/users/rahul.pisupati/.conda/envs/snpmatch-5.0/"
 
     input:
     path("*")
@@ -66,7 +69,7 @@ process make_csv_cross {
     path "intermediate_modified.csv"
 
     """
-    python  $workflow.projectDir/makeCSVTable_csmatch.py -d $f_db --dirs -i ./ -o intermediate_modified -f $output_id
+    python $02_makeCSVTable_csmatch.py -d $f_db --dirs -i ./ -o intermediate_modified -f $output_id
     """
 }
 
